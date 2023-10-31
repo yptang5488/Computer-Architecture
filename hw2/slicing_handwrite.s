@@ -55,12 +55,20 @@ clzLoop:
 goOn:
     addi s1, s1, 1        # i = i + 1
     blt s1, a1, clzLoop
-    
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal ra, printLoopOutside    # printf("Test %d: ", caseNum) || printf("\n")
-    lw ra, 0(sp)
-    addi sp, sp, 4
+
+printLoopOutside:
+    la a0, newlineStr
+    li a7, 4
+    ecall
+    la a0, testStr
+    li a7, 4
+    ecall
+    add a0, x0, a2
+    li a7, 1
+    ecall
+    la a0, colonStr
+    li a7, 4
+    ecall
     
     add s1, x0, x0        # s1: i = 0
 reconLoop:
@@ -72,12 +80,15 @@ reconLoop:
     j goOn2
 isEqual:
     addi s4, x0, 255      # arr[i] = 255
+
 goOn2:
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal ra, printLoopInside    # printf("%u ", arr[i])
-    lw ra, 0(sp)
-    addi sp, sp, 4
+    # printLoopInside:
+    add a0, x0, s4
+    li a7, 1
+    ecall
+    la a0, spaceStr
+    li a7, 4
+    ecall
     
     addi s1, s1, 1        # i = i + 1
     blt s1, a1, reconLoop    
@@ -129,29 +140,5 @@ count_ones:
     andi t0, a0, 0x7f     # t0: x & 0x7f
     addi t1, x0, 32       # t1: 32
     sub  a3, t1, t0       # a3: return (32 - (x & 0x7f))
-    ret
-    
-printLoopOutside:
-    la a0, newlineStr
-    li a7, 4
-    ecall
-    la a0, testStr
-    li a7, 4
-    ecall
-    add a0, x0, a2
-    li a7, 1
-    ecall
-    la a0, colonStr
-    li a7, 4
-    ecall
-    ret
-    
-printLoopInside:
-    add a0, x0, s4
-    li a7, 1
-    ecall
-    la a0, spaceStr
-    li a7, 4
-    ecall
     ret
     
