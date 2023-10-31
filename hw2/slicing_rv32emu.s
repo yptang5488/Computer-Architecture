@@ -1,18 +1,35 @@
-# run on Ripes
+
+.org 0
+# Provide program starting address to linker
+.global _start
+
+/* newlib system calls */
+.set SYSEXIT,  93
+.set SYSWRITE, 64
+.set STDOUT, 1
+
+.section .rodata
+testStr: .ascii "Test"
+        .set testStr_size, .-testStr
+colonStr: .ascii ": "
+        .set colonStr_size, .-colonStr
+newlineStr: .ascii "\n"
+        .set newlineStr_size, .-newlineStr
+spaceStr: .ascii " "
+        .set spaceStr_size, .-spaceStr
+
 .data
 test0: .word 255, 0, 128, 1
+        .set arr_size0, .test0
 test1: .word 167, 133, 111, 144, 140, 135, 159, 154, 148
+        .set arr_size1, .test1
 test2: .word 50, 100, 150, 200, 250, 255
+        .set arr_size2, .test2
 
-testStr: .string "Test "
-colonStr: .string ": "
-newlineStr: .string "\n"
-spaceStr: .string " "
 
 .text
 
-
-main:
+_start:
     la a0, test0          # a0: the base address of test0
     addi a1, x0, 4        # a1: the size of test0
     addi a2, x0, 0        # a2: caseNum = 0
@@ -28,7 +45,8 @@ main:
     addi a2, x0, 2        # a2: caseNum = 2
     jal ra, bit_plane_slicing
     
-    li a7, 10             # Exit program
+    li a7, SYSEXIT        # Exit program
+    add a0, x0, 0         # Use 0 return code
     ecall
     
 bit_plane_slicing:
@@ -57,13 +75,17 @@ goOn:
     addi s1, s1, 1        # i = i + 1
     blt s1, a1, clzLoop
     
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
+    sw a1, 8(sp)
+    sw a2, 12(sp)
     jal ra, printLoopOutside    # printf("Test %d: ", caseNum) || printf("\n")
     lw ra, 0(sp)
     lw a0, 4(sp)
-    addi sp, sp, 8
+    lw a1, 8(sp)
+    lw a2, 12(sp)
+    addi sp, sp, 16
     
     add s1, x0, x0        # s1: i = 0
 reconLoop:
@@ -73,17 +95,20 @@ reconLoop:
     beq s4, s0, isEqual   # if(arr[i] == max)
     add s4, x0, x0        # arr[i] = 0
 goOn2:     
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
+    sw a1, 8(sp)
+    sw a2, 12(sp)
     jal ra, printLoopInside    # printf("%u ", arr[i])
     lw ra, 0(sp)
     lw a0, 4(sp)
-    addi sp, sp, 8
+    lw a1, 8(sp)
+    lw a2, 12(sp)
+    addi sp, sp, 16
     
     addi s1, s1, 1        # i = i + 1
     blt s1, a1, reconLoop
-    
     ret
     
 isGreater: 
@@ -142,27 +167,92 @@ count_ones:
     ret
     
 printLoopOutside:
-    la a0, newlineStr
-    li a7, 4
+    # save a2 (caseNum) first
+    add t0, x0, a2
+    add t0, t0, 48        # convert to ASCII
+
+    li a7, SYSWRITE
+    li a0, STDOUT
+    la a1, newlineStr
+    li a2, newlineStr_size
     ecall
-    la a0, testStr
-    li a7, 4
+
+    li a7, SYSWRITE
+    li a0, STDOUT
+    la a1, testStr
+    li a2, testStr_size
     ecall
-    add a0, x0, a2
-    li a7, 1
+
+    # print caseNum
+    addi sp, sp, -4
+    sw t0, 0(sp)
+    addi a1, sp, 0
+    addi sp, sp, 4
+
+    li a7, SYSWRITE
+    li a0, STDOUT
+    li a2, 1
     ecall
-    la a0, colonStr
-    li a7, 4
+    
+
+    li a7, SYSWRITE
+    li a0, STDOUT
+    la a1, colonStr
+    li a2, colonStr_size
     ecall
+
     ret
     
 printLoopInside:
-    add a0, x0, s4
-    li a7, 1
+    # s4 = arr[i]
+    addi t0, x0, 10       # t0 = 10
+    add t1, s4, x0        # t1 = s4
+    blt t1, t0, printmin    # if t1 < 10 : print min
+printmax:
+    addi t0, x0, 2
+    add t0, t0, 48        # convert to ASCII
+    addi sp, sp, -4
+    sw t0, 0(sp)
+    addi a1, sp, 0
+    addi sp, sp, 4
+
+    li a7, SYSWRITE
+    li a0, STDOUT
+    li a2, 1
     ecall
-    la a0, spaceStr
-    li a7, 4
+
+    addi t0, x0, 5
+    add t0, t0, 48        # convert to ASCII
+    addi sp, sp, -4
+    sw t0, 0(sp)
+    addi a1, sp, 0
+    addi sp, sp, 4
+
+    li a7, SYSWRITE
+    li a0, STDOUT
+    li a2, 1
+    ecall
+    ecall
+    j printspace
+
+printmin:
+    addi t0, x0, 0
+    add t0, t0, 48        # convert to ASCII
+    addi sp, sp, -4
+    sw t0, 0(sp)
+    addi a1, sp, 0
+    addi sp, sp, 4
+
+    li a7, SYSWRITE
+    li a0, STDOUT
+    li a2, 1
+    ecall
+
+printspace:
+    li a7, SYSWRITE
+    li a0, STDOUT
+    la a1, spaceStr
+    li a2, spaceStr_size
     ecall
     ret
-    
-    
+
