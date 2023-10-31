@@ -13,17 +13,17 @@ spaceStr: .string " "
 
 
 main:
-    la a0, test0          # a0: the base address of test0
+    la a4, test0          # a4: the base address of test0
     addi a1, x0, 4        # a1: the size of test0
     addi a2, x0, 0        # a2: caseNum = 0
     jal ra, bit_plane_slicing
     
-    la a0, test1          # a0: the base address of test1
+    la a4, test1          # a4: the base address of test1
     addi a1, x0, 9        # a1: the size of test1
     addi a2, x0, 1        # a2: caseNum = 1
     jal ra, bit_plane_slicing
     
-    la a0, test2          # a0: the base address of test2
+    la a4, test2          # a4: the base address of test2
     addi a1, x0, 6        # a1: the size of test2
     addi a2, x0, 2        # a2: caseNum = 2
     jal ra, bit_plane_slicing
@@ -36,17 +36,15 @@ bit_plane_slicing:
     add s1, x0, x0        # s1: i = 0
 clzLoop:
     slli t2, s1, 2        # t2: array offset = i*4
-    add t2, t2, a0        # t2: base addr + offset
+    add t2, t2, a4        # t2: base addr + offset
     lw s4, 0(t2)          # s4: arr[i]
     
-    addi sp, sp, -8
+    addi sp, sp, -4
     sw ra, 0(sp)
-    sw a0, 4(sp)
     add a0, x0, s4        # load arr[i] to parameter register a0
     jal ra, count_leading_zeros    
     lw ra, 0(sp)
-    lw a0, 4(sp)
-    addi sp, sp, 8
+    addi sp, sp, 4
     
     add s2, x0, a3        # s2: LZ
     addi t1, x0, 31       # t1: 32 - 1
@@ -58,18 +56,16 @@ goOn:
     addi s1, s1, 1        # i = i + 1
     blt s1, a1, clzLoop
     
-    addi sp, sp, -8
+    addi sp, sp, -4
     sw ra, 0(sp)
-    sw a0, 4(sp)
     jal ra, printLoopOutside    # printf("Test %d: ", caseNum) || printf("\n")
     lw ra, 0(sp)
-    lw a0, 4(sp)
-    addi sp, sp, 8
+    addi sp, sp, 4
     
     add s1, x0, x0        # s1: i = 0
 reconLoop:
     slli t2, s1, 2        # t2: array offset = i*4
-    add t2, t2, a0        # t2: base addr + offset
+    add t2, t2, a4        # t2: base addr + offset
     lw s4, 0(t2)          # s4: arr[i]
     beq s4, s0, isEqual   # if(arr[i] == max)
     add s4, x0, x0        # arr[i] = 0
@@ -77,13 +73,11 @@ reconLoop:
 isEqual:
     addi s4, x0, 255      # arr[i] = 255
 goOn2:
-    addi sp, sp, -8
+    addi sp, sp, -4
     sw ra, 0(sp)
-    sw a0, 4(sp)
     jal ra, printLoopInside    # printf("%u ", arr[i])
     lw ra, 0(sp)
-    lw a0, 4(sp)
-    addi sp, sp, 8
+    addi sp, sp, 4
     
     addi s1, s1, 1        # i = i + 1
     blt s1, a1, reconLoop    
