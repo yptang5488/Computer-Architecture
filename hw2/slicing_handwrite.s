@@ -52,7 +52,8 @@ clzLoop:
     addi t1, x0, 31       # t1: 32 - 1
     sub s3, t1, s2        # s3: MSB = 32 - 1 - LZ 
     sw s3, 0(t2)          # arr[i] = MSB
-    bge s3, s0, isGreater # if(MSB > max)
+    blt s3, s0, goOn
+    add s0, x0, s3        # if(max < MSB) max = MSB
 goOn:
     addi s1, s1, 1        # i = i + 1
     blt s1, a1, clzLoop
@@ -72,7 +73,10 @@ reconLoop:
     lw s4, 0(t2)          # s4: arr[i]
     beq s4, s0, isEqual   # if(arr[i] == max)
     add s4, x0, x0        # arr[i] = 0
-goOn2:     
+    j goOn2
+isEqual:
+    addi s4, x0, 255      # arr[i] = 255
+goOn2:
     addi sp, sp, -8
     sw ra, 0(sp)
     sw a0, 4(sp)
@@ -82,17 +86,9 @@ goOn2:
     addi sp, sp, 8
     
     addi s1, s1, 1        # i = i + 1
-    blt s1, a1, reconLoop
-    
+    blt s1, a1, reconLoop    
     ret
-    
-isGreater: 
-    add s0, x0, s3        # max = MSB
-    j goOn
 
-isEqual:
-    addi s4, x0, 255      # arr[i] = 255
-    j goOn2
     
 count_leading_zeros:
     srli t0, a0, 1        # t0: x >> 1
@@ -164,5 +160,4 @@ printLoopInside:
     li a7, 4
     ecall
     ret
-    
     
